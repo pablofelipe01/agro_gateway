@@ -43,10 +43,10 @@ FRAGMENT_DELAY = 5
 MAX_FRAGMENTS = 5
 
 # Archivo de contactos
-CONTACTOS_FILE = "/home/recomputer/mesh_gateway/config/contactos.json"
+CONTACTOS_FILE = "/home/pi/agro_gateway/config/contactos.json"
 
 # Configuración Google Sheets - AGRO
-AGRO_CREDENTIALS_FILE = '/home/recomputer/agro_gateway/credentials.json'
+AGRO_CREDENTIALS_FILE = '/home/pi/agro_gateway/credentials.json'
 AGRO_SPREADSHEET_ID = '1O45DA8vVGApEPV8pBSZ0AojYzrcSe-ixN7noKPR3Ciw'
 AGRO_SHEET_NAME = 'Sheet1'
 
