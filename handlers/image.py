@@ -188,6 +188,10 @@ def _handle_end(text, from_id, from_num, send_fn, publish_mqtt):
         img_id = parts[1]
 
         if img_id not in image_buffers:
+            # Si ya fue analizada (esta en result_cache), ignorar IMG_END tardio
+            if img_id in result_cache:
+                logging.info(f"IMG_END tardio ignorado (ya analizada): {img_id}")
+                return
             logging.warning(f"IMG_END para imagen desconocida: {img_id}")
             send_fn(from_num, f"IMG_ERROR|{img_id}|imagen_no_encontrada")
             return
