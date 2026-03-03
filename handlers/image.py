@@ -84,20 +84,27 @@ def _handle_start(text, from_id, from_num, send_fn):
                 send_fn(from_num, f"IMG_ERROR|{img_id}|servidor_ocupado")
                 return
         
-        image_buffers[img_id] = {
-            'chunks': {},
-            'total': total,
-            'tipo': tipo,
-            'checksum': checksum,
-            'from_num': from_num,
-            'from_id': from_id,
-            'started_at': datetime.now(),
-            'last_chunk_at': datetime.now(),
-            'ack_sent_at_count': 0,
-            'retry_count': 0,
-        }
-        
-        logging.info(f"📸 IMG_START: {img_id} - {total} chunks - tipo: {tipo}")
+        if img_id in image_buffers:
+            # Update existing orphan buffer (chunks arrived before IMG_START)
+            buf = image_buffers[img_id]
+            buf['total'] = total
+            buf['tipo'] = tipo
+            buf['checksum'] = checksum
+            logging.info(f"📸 IMG_START (late): {img_id} - {total} chunks - tipo: {tipo} - ya tiene {len(buf['chunks'])} chunks")
+        else:
+            image_buffers[img_id] = {
+                'chunks': {},
+                'total': total,
+                'tipo': tipo,
+                'checksum': checksum,
+                'from_num': from_num,
+                'from_id': from_id,
+                'started_at': datetime.now(),
+                'last_chunk_at': datetime.now(),
+                'ack_sent_at_count': 0,
+                'retry_count': 0,
+            }
+            logging.info(f"📸 IMG_START: {img_id} - {total} chunks - tipo: {tipo}")
     except Exception as e:
         logging.error(f"❌ Error en IMG_START: {e}")
 
@@ -113,8 +120,20 @@ def _handle_chunk(text, from_id, from_num, send_fn):
         data = parts[3]
         
         if img_id not in image_buffers:
-            logging.warning(f"⚠️ Chunk para imagen desconocida: {img_id}")
-            return
+            # Auto-create orphan buffer (IMG_START may have been lost)
+            logging.warning(f"⚠️ Chunk sin IMG_START: {img_id} - creando buffer huerfano")
+            image_buffers[img_id] = {
+                'chunks': {},
+                'total': 0,
+                'tipo': 'general',
+                'checksum': '',
+                'from_num': from_num,
+                'from_id': from_id,
+                'started_at': datetime.now(),
+                'last_chunk_at': datetime.now(),
+                'ack_sent_at_count': 0,
+                'retry_count': 0,
+            }
         
         buf = image_buffers[img_id]
         buf['chunks'][chunk_num] = data
@@ -126,8 +145,9 @@ def _handle_chunk(text, from_id, from_num, send_fn):
         # ACK parcial cada N chunks
         if received % ACK_EVERY_N_CHUNKS == 0 and received > buf['ack_sent_at_count']:
             buf['ack_sent_at_count'] = received
-            send_fn(from_num, f"IMG_ACK|{img_id}|{received}/{total}")
-            logging.info(f"📸 ACK: {img_id} - {received}/{total}")
+            total_str = str(total) if total > 0 else "?"
+            send_fn(from_num, f"IMG_ACK|{img_id}|{received}/{total_str}")
+            logging.info(f"📸 ACK: {img_id} - {received}/{total_str}")
         
     except Exception as e:
         logging.error(f"❌ Error en IMG chunk: {e}")
@@ -147,6 +167,16 @@ def _handle_end(text, from_id, from_num, send_fn, publish_mqtt):
             return
         
         buf = image_buffers[img_id]
+        
+        # Update total/checksum from IMG_END if orphan buffer (IMG_START was lost)
+        if len(parts) >= 4:
+            end_total = int(parts[2])
+            end_checksum = parts[3]
+            if buf['total'] == 0:
+                buf['total'] = end_total
+                buf['checksum'] = end_checksum
+                logging.info(f"📸 IMG_END completó buffer huerfano: {img_id} - total={end_total}")
+        
         received = len(buf['chunks'])
         total = buf['total']
         
