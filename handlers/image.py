@@ -8,6 +8,7 @@ from anthropic import Anthropic
 
 anthropic_client = None
 image_buffers = {}
+user_context = {}  # Last text message per user (from_num -> text)
 
 PROMPTS_BY_TYPE = {
     'plaga': """Analiza esta imagen de una planta. Identifica:
@@ -53,6 +54,17 @@ def cleanup_old_buffers():
     for img_id in expired:
         logging.warning(f"🗑️ Buffer expirado: {img_id}")
         del image_buffers[img_id]
+
+
+def store_context(from_num, text):
+    """Guardar ultimo mensaje de texto del usuario como contexto para imagen"""
+    if text and not text.startswith('IMG'):
+        user_context[from_num] = {
+            'text': text,
+            'timestamp': datetime.now()
+        }
+        logging.info(f"Contexto guardado para {hex(from_num)}: {text[:50]}")
+
 
 def handle(text, from_id, from_num, send_fn, publish_mqtt):
     """Router de mensajes IMG"""
@@ -241,13 +253,29 @@ def _reassemble_and_analyze(img_id, send_fn, publish_mqtt):
             del image_buffers[img_id]
             return
         
-        prompt = PROMPTS_BY_TYPE.get(tipo, PROMPTS_BY_TYPE['general'])
-        
-        logging.info(f"📸 Enviando a Claude Vision: {img_id} ({tipo})")
-        
+        base_prompt = PROMPTS_BY_TYPE.get(tipo, PROMPTS_BY_TYPE['general'])
+
+        # Incluir contexto del usuario si existe
+        context_text = ""
+        if from_num in user_context:
+            ctx = user_context[from_num]
+            age = (datetime.now() - ctx['timestamp']).total_seconds()
+            if age < 300:  # Contexto valido por 5 minutos
+                context_text = ctx['text']
+                del user_context[from_num]  # Consumir contexto
+                logging.info(f"\U0001f4dd Usando contexto del usuario: {context_text[:80]}")
+
+        if context_text:
+            prompt = base_prompt + "\n\nIMPORTANTE - El usuario envio este mensaje junto con la foto:\n\"" + context_text + "\"\nResponde enfocandote en lo que el usuario pregunta o describe."
+        else:
+            prompt = base_prompt
+
+        logging.info(f"\U0001f4f8 Enviando a Claude Vision: {img_id} ({tipo})")
+
         response = anthropic_client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=300,
+            max_tokens=500,
+            temperature=0.3,
             messages=[{
                 "role": "user",
                 "content": [

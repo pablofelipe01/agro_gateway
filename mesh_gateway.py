@@ -257,7 +257,9 @@ def process_mesh_message(packet, interface):
             send_public_message(interface, "🚨 Alerta de emergencia enviada a coordinadores.")
             return
         
-        logging.info(f"💬 Mensaje normal procesado")
+        # Guardar como contexto para posible imagen que viene despues
+        image.store_context(from_num, text)
+        logging.info(f"💬 Mensaje normal procesado (contexto guardado)")
         
     except Exception as e:
         logging.error(f"❌ Error procesando mensaje: {e}")
