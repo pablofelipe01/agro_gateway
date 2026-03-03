@@ -36,7 +36,7 @@ Responde en español colombiano, máximo 200 palabras.""",
 MAX_BUFFER_AGE_SECONDS = 300  # 5 minutos
 MAX_CONCURRENT_IMAGES = 3
 ACK_EVERY_N_CHUNKS = 10
-MAX_RETRY_ROUNDS = 2
+MAX_RETRY_ROUNDS = 4
 
 def init(api_key):
     global anthropic_client
