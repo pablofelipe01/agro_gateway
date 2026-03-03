@@ -203,7 +203,7 @@ def process_mesh_message(packet, interface):
         # ==================== ROUTING ====================
         
         # Imágenes (nuevo)
-        if text.startswith('IMG_START|') or text.startswith('IMG|') or text.startswith('IMG_END|'):
+        if text.startswith('IMG_START|') or text.startswith('IMG|') or text.startswith('IMG_END|') or text.startswith('IMG_RESULT_ACK|'):
             image.handle(text, from_id, from_num, send_fn, publish_mqtt_msg)
             return
         
