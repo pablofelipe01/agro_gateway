@@ -66,7 +66,7 @@ def handle(text, from_id, from_num, send_fn, publish_mqtt):
         _handle_end(text, from_id, from_num, send_fn, publish_mqtt)
 
 def _handle_start(text, from_id, from_num, send_fn):
-    """IMG_START|id|total_chunks|tipo|checksum"""
+    """IMG_START|id|tipo|total_chunks|checksum"""
     try:
         parts = text.split('|')
         if len(parts) < 5:
@@ -74,8 +74,8 @@ def _handle_start(text, from_id, from_num, send_fn):
             return
         
         img_id = parts[1]
-        total = int(parts[2])
-        tipo = parts[3]
+        tipo = parts[2]
+        total = int(parts[3])
         checksum = parts[4]
         
         if len(image_buffers) >= MAX_CONCURRENT_IMAGES:
@@ -267,7 +267,7 @@ def _send_result(img_id, result_text, from_num, send_fn):
     encoded = result_text.encode('utf-8')
     
     if len(encoded) <= max_bytes:
-        send_fn(from_num, f"IMG_RESULT|{img_id}|{result_text}")
+        send_fn(from_num, f"IMG_RESULT|{img_id}|1/1|{result_text}")
         return
     
     # Fragmentar por palabras
