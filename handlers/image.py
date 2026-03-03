@@ -262,7 +262,7 @@ def _reassemble_and_analyze(img_id, send_fn, publish_mqtt):
 
 def _send_result(img_id, result_text, from_num, send_fn):
     """Enviar resultado, fragmentando si es necesario"""
-    max_bytes = 210  # Dejar espacio para header IMG_RESULT|xxxx|
+    max_bytes = 150  # Content only - header IMG_RESULT|xxxx|n/n| adds ~25 bytes
     
     encoded = result_text.encode('utf-8')
     
