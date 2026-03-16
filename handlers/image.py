@@ -11,28 +11,41 @@ image_buffers = {}
 user_context = {}  # Last text message per user (from_num -> text)
 result_cache = {}  # Cached results for retry (img_id -> {parts, total, from_num, retry_count, sent_at})
 
+SYSTEM_PROMPT = (
+    "Eres un observador agricola. Tu UNICA funcion es DESCRIBIR lo que ves en la imagen "
+    "e identificar problemas. NO des recomendaciones de tratamiento. NO sugieras productos, "
+    "fertilizantes, pesticidas ni quimicos. NO menciones NPK, fungicidas ni insecticidas. "
+    "Solo describe y diagnostica. Se extremadamente breve - esto se envia por radio LoRa."
+)
+
+_BASE = SYSTEM_PROMPT + "\n\nResponde en este formato exacto:\n"
+_SUFFIX = "Maximo 400 caracteres en total. Responde en espanol."
+
 PROMPTS_BY_TYPE = {
-    'plaga': """Analiza esta imagen de una planta. Identifica:
-1. Especie de planta si es posible
-2. Enfermedad, plaga o deficiencia visible
-3. Severidad (leve/moderada/grave)
-4. Recomendacion de tratamiento
-Responde en espanol colombiano, maximo 200 palabras. Se practico - el agricultor necesita saber QUE HACER.""",
-
-    'suelo': """Analiza esta imagen de suelo agricola. Identifica:
-1. Tipo de suelo visible
-2. Problemas evidentes (erosion, compactacion, encharcamiento)
-3. Recomendaciones practicas
-Responde en espanol colombiano, maximo 150 palabras.""",
-
-    'cultivo': """Analiza esta imagen de cultivo. Identifica:
-1. Estado general del cultivo
-2. Etapa de crecimiento
-3. Problemas visibles
-4. Recomendaciones
-Responde en espanol colombiano, maximo 200 palabras.""",
-
-    'general': """Describe esta imagen agricola y da recomendaciones practicas relevantes. Responde en espanol colombiano, maximo 200 palabras."""
+    'plaga': (
+        _BASE +
+        "OBSERVACION: Describe lo que ves (1-2 oraciones)\n"
+        "DIAGNOSTICO: Identifica plaga, insecto o enfermedad (1 oracion)\n"
+        "CAUSA: Causa probable (1 oracion)\n" + _SUFFIX
+    ),
+    'suelo': (
+        _BASE +
+        "OBSERVACION: Describe lo que ves en el suelo (1-2 oraciones)\n"
+        "DIAGNOSTICO: Estado del suelo (1 oracion)\n"
+        "CAUSA: Posible causa (1 oracion)\n" + _SUFFIX
+    ),
+    'cultivo': (
+        _BASE +
+        "OBSERVACION: Describe el estado del cultivo (1-2 oraciones)\n"
+        "DIAGNOSTICO: Evaluacion general (1 oracion)\n"
+        "CAUSA: Si hay problema, causa probable (1 oracion)\n" + _SUFFIX
+    ),
+    'general': (
+        _BASE +
+        "OBSERVACION: Describe lo que ves (1-2 oraciones)\n"
+        "DIAGNOSTICO: Evaluacion (1 oracion)\n"
+        "CAUSA: Si hay problema, causa probable (1 oracion)\n" + _SUFFIX
+    ),
 }
 
 MAX_BUFFER_AGE_SECONDS = 300  # 5 minutos
@@ -284,7 +297,7 @@ def _reassemble_and_analyze(img_id, send_fn, publish_mqtt):
                 logging.info(f"Usando contexto del usuario: {context_text[:80]}")
 
         if context_text:
-            prompt = base_prompt + "\n\nIMPORTANTE - El usuario envio este mensaje junto con la foto:\n\"" + context_text + "\"\nResponde enfocandote en lo que el usuario pregunta o describe."
+            prompt = "Contexto del usuario: " + context_text + "\n\n" + base_prompt
         else:
             prompt = base_prompt
 
@@ -292,8 +305,8 @@ def _reassemble_and_analyze(img_id, send_fn, publish_mqtt):
 
         response = anthropic_client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=500,
-            temperature=0.3,
+            max_tokens=250,
+            temperature=0.1,
             messages=[{
                 "role": "user",
                 "content": [
