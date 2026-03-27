@@ -1,6 +1,6 @@
 {
   "contactos": {
     "pablo": {"node_id": "!7c1a5974", "nombre": "Pablo Felipe"},
-    "gateway": {"node_id": "!02e6bf50", "nombre": "Gateway"}
+    "gateway": {"node_id": "!49b54674", "nombre": "Gateway Jetson"}
   }
 }

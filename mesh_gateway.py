@@ -120,7 +120,7 @@ def send_private_message(interface, destination_id, message):
             })
             return
         
-        logging.info(f"🔒📦 Mensaje privado largo ({len(message)} chars) - dividiendo")
+        logging.info(f"🔒📦 Mensaje privado largo ({len(message)} chars) a {hex(destination_id)} - dividiendo")
         chars_per_fragment = MAX_CHARS_PER_MESSAGE - 10
         fragments = [message[i:i + chars_per_fragment] for i in range(0, len(message), chars_per_fragment)]
         

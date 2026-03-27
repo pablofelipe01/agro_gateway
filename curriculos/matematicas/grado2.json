@@ -1,0 +1,51 @@
+{
+  "subject": "matematicas",
+  "grade": "2",
+  "standards_men": "Estándares Básicos de Competencias en Matemáticas - MEN Colombia",
+  "units": [
+    {
+      "unit": "Números y operaciones",
+      "topics": [
+        "Números hasta 999",
+        "Suma con reagrupación",
+        "Resta con desagrupación",
+        "Problemas de suma y resta"
+      ],
+      "competencies": ["Contar", "Calcular", "Resolver problemas"],
+      "sample_questions": [
+        "Si tienes 45 naranjas y recoges 28 más, ¿cuántas tienes?",
+        "¿Qué número viene después del 199?",
+        "Si compras algo de $350 y pagas con $500, ¿cuánto te devuelven?"
+      ]
+    },
+    {
+      "unit": "Geometría y medidas",
+      "topics": [
+        "Figuras geométricas básicas",
+        "Medidas de longitud: metro y centímetro",
+        "Medidas de peso: kilogramo",
+        "El reloj y las horas"
+      ],
+      "competencies": ["Medir", "Comparar", "Clasificar"],
+      "sample_questions": [
+        "¿Cuántos lados tiene un triángulo?",
+        "¿Qué es más largo, un metro o un centímetro?",
+        "¿Qué hora marca el reloj cuando las manecillas están en 12 y 6?"
+      ]
+    },
+    {
+      "unit": "Datos y patrones",
+      "topics": [
+        "Secuencias numéricas simples",
+        "Tablas de datos sencillas",
+        "Más que, menos que, igual que"
+      ],
+      "competencies": ["Identificar patrones", "Organizar datos", "Comparar"],
+      "sample_questions": [
+        "¿Qué número sigue: 2, 4, 6, 8, ...?",
+        "Si María tiene 5 gallinas y Pedro tiene 3, ¿quién tiene más?",
+        "Completa: 10, 20, 30, __, 50"
+      ]
+    }
+  ]
+}

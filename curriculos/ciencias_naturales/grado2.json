@@ -1,0 +1,52 @@
+{
+  "subject": "ciencias_naturales",
+  "grade": "2",
+  "standards_men": "Estándares Básicos de Competencias en Ciencias Naturales - MEN Colombia",
+  "units": [
+    {
+      "unit": "Los seres vivos",
+      "topics": [
+        "Características de los seres vivos",
+        "Plantas: partes y funciones",
+        "Animales: clasificación básica",
+        "Ciclos de vida"
+      ],
+      "competencies": ["Observar", "Clasificar", "Describir"],
+      "sample_questions": [
+        "¿Qué necesitan las plantas para vivir?",
+        "¿En qué se parecen un perro y un gato?",
+        "¿Cómo crece una semilla?"
+      ]
+    },
+    {
+      "unit": "El entorno",
+      "topics": [
+        "Ecosistemas locales: río, bosque, finca",
+        "El agua y su importancia",
+        "El suelo y los cultivos",
+        "Animales de la región"
+      ],
+      "competencies": ["Explorar", "Relacionar", "Comunicar"],
+      "sample_questions": [
+        "¿Por qué es importante cuidar el agua del río?",
+        "¿Qué animales viven cerca de tu casa?",
+        "¿Qué pasa si no llueve por mucho tiempo?"
+      ]
+    },
+    {
+      "unit": "El cuerpo humano",
+      "topics": [
+        "Los sentidos",
+        "Alimentación saludable",
+        "Higiene y salud",
+        "Partes del cuerpo"
+      ],
+      "competencies": ["Identificar", "Comparar", "Cuidar"],
+      "sample_questions": [
+        "¿Para qué sirven los ojos?",
+        "¿Qué alimentos nos dan energía?",
+        "¿Por qué debemos lavarnos las manos?"
+      ]
+    }
+  ]
+}
