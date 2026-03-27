@@ -16,7 +16,7 @@ import paho.mqtt.client as mqtt
 import gspread
 from google.oauth2.service_account import Credentials
 
-from handlers import registro, siembra, claude_ai, telegram_bridge, image
+from handlers import registro, siembra, claude_ai, telegram_bridge, image, edu
 
 # ==================== CONFIGURACIÓN ====================
 
@@ -97,6 +97,7 @@ def load_contactos():
 def init_handlers():
     claude_ai.init(ANTHROPIC_API_KEY)
     image.init(ANTHROPIC_API_KEY)
+    edu.init(ANTHROPIC_API_KEY)
     logging.info("✓ Handlers inicializados")
 
 # ==================== FUNCIONES MESH ====================
@@ -231,6 +232,14 @@ def process_mesh_message(packet, interface):
             telegram_bridge.handle_familia(text, from_id, from_num, send_fn, publish_mqtt_msg, contactos_db)
             return
         
+        # Educativo
+        edu_prefixes = ("PREGUNTA_IA|", "ENTREGA|", "LECCION|", "EVAL_PROF|",
+                       "PERFIL_UPDATE|", "SYNC_REQ|", "TAREA|")
+        if any(text.startswith(p) for p in edu_prefixes):
+            logging.info(f"📚 Mensaje EDU detectado")
+            edu.handle(text, from_id, from_num, send_fn, publish_mqtt_msg)
+            return
+
         # Claude AI
         if text.lower().startswith('@claude'):
             claude_ai.handle(text, from_id, from_num, send_fn, publish_mqtt_msg)
