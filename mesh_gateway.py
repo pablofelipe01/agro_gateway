@@ -234,7 +234,7 @@ def process_mesh_message(packet, interface):
         
         # Educativo
         edu_prefixes = ("PREGUNTA_IA|", "ENTREGA|", "LECCION|", "EVAL_PROF|",
-                       "PERFIL_UPDATE|", "SYNC_REQ|", "TAREA|")
+                       "PERFIL_UPDATE|", "SYNC_REQ|", "TAREA|", "ROSTER_REQ|", "ROSTER_PIN|")
         if any(text.startswith(p) for p in edu_prefixes):
             logging.info(f"📚 Mensaje EDU detectado")
             edu.handle(text, from_id, from_num, send_fn, publish_mqtt_msg)

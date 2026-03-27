@@ -153,6 +153,17 @@ def _init_database():
         FOREIGN KEY (student_id) REFERENCES students(id)
     )''')
 
+    c.execute('''CREATE TABLE IF NOT EXISTS roster (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        grade TEXT DEFAULT '',
+        role TEXT NOT NULL,
+        node_id INTEGER UNIQUE,
+        pin TEXT,
+        child_id TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )''')
+
     c.execute('''CREATE TABLE IF NOT EXISTS sync_queue (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         entity_type TEXT NOT NULL,
@@ -187,6 +198,10 @@ def handle(text, from_id, from_num, send_fn, publish_mqtt):
             _handle_sync_request(text, from_id, from_num, send_fn, publish_mqtt)
         elif text.startswith('TAREA|'):
             _handle_new_assignment(text, from_id, from_num, send_fn, publish_mqtt)
+        elif text.startswith('ROSTER_REQ|'):
+            _handle_roster_request(text, from_id, from_num, send_fn, publish_mqtt)
+        elif text.startswith('ROSTER_PIN|'):
+            _handle_roster_pin(text, from_id, from_num, send_fn, publish_mqtt)
     except Exception as e:
         logging.error(f"❌ Error en handler EDU: {e}")
         import traceback
@@ -639,6 +654,57 @@ def _handle_profile_update(text, from_id, from_num, send_fn, publish_mqtt):
     logging.info(f"📝 Perfil actualizado: {student_id}.{field}")
 
     _add_to_sync_queue('student', student_id, 'update', {'field': field, 'value': value})
+
+
+def _handle_roster_request(text, from_id, from_num, send_fn, publish_mqtt):
+    """ROSTER_REQ|node_id — La app pregunta quién soy por mi node_id.
+    Responde: ROSTER_RES|id|name|role|grade|child_id o ROSTER_RES|UNKNOWN"""
+    parts = text.split('|')
+    if len(parts) < 2:
+        return
+
+    # El node_id viene como int hex desde la app, pero from_num ya lo tiene
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM roster WHERE node_id = ?", (from_num,))
+    row = c.fetchone()
+    conn.close()
+
+    if row:
+        r = dict(row)
+        child_id = r.get('child_id') or ''
+        has_pin = '1' if r.get('pin') else '0'
+        send_fn(from_num, f"ROSTER_RES|{r['id']}|{r['name']}|{r['role']}|{r['grade']}|{child_id}|{has_pin}")
+        logging.info(f"📋 Roster: {r['name']} ({r['role']}) — nodo {hex(from_num)}")
+    else:
+        send_fn(from_num, "ROSTER_RES|UNKNOWN")
+        logging.warning(f"⚠️ Nodo no registrado: {hex(from_num)}")
+
+
+def _handle_roster_pin(text, from_id, from_num, send_fn, publish_mqtt):
+    """ROSTER_PIN|user_id|pin — Validar PIN de profesor/supervisor.
+    Responde: ROSTER_PIN_OK|user_id o ROSTER_PIN_FAIL"""
+    parts = text.split('|')
+    if len(parts) < 3:
+        return
+
+    user_id = parts[1]
+    pin = parts[2]
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM roster WHERE id = ? AND pin = ?", (user_id, pin))
+    row = c.fetchone()
+    conn.close()
+
+    if row:
+        send_fn(from_num, f"ROSTER_PIN_OK|{user_id}")
+        logging.info(f"✅ PIN validado: {user_id}")
+    else:
+        send_fn(from_num, f"ROSTER_PIN_FAIL|{user_id}")
+        logging.warning(f"❌ PIN incorrecto para: {user_id}")
 
 
 def _handle_sync_request(text, from_id, from_num, send_fn, publish_mqtt):
