@@ -314,6 +314,21 @@ def main():
         daemon=True
     )
     telegram_thread.start()
+
+    # Sync EDU a Airtable cada 5 minutos
+    def periodic_edu_sync():
+        while True:
+            time.sleep(300)
+            try:
+                synced = edu.sync_to_airtable()
+                if synced > 0:
+                    logging.info(f"☁️ Sync EDU: {synced} registros enviados a Airtable")
+            except Exception as e:
+                logging.error(f"Error sync EDU: {e}")
+
+    sync_thread = Thread(target=periodic_edu_sync, daemon=True)
+    sync_thread.start()
+    logging.info("✓ Sync EDU Airtable iniciado (cada 5 min)")
     logging.info("✓ Telegram polling iniciado")
     
     # Suscribir a mensajes mesh
