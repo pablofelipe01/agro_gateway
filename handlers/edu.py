@@ -211,8 +211,22 @@ def handle(text, from_id, from_num, send_fn, publish_mqtt):
 # ==================== IA: LOCAL-FIRST ====================
 
 def _query_ai(prompt, max_tokens=MAX_AI_TOKENS):
-    """Consultar IA: Ollama local primero, Claude API como fallback"""
-    # 1. Intentar Ollama local (siempre disponible)
+    """Consultar IA: Claude API primero, Ollama local como fallback sin internet"""
+    # 1. Intentar Claude API (mejor calidad)
+    if anthropic_client:
+        try:
+            message = anthropic_client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=max_tokens,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            result = message.content[0].text.strip()
+            logging.info(f"🌐 Respuesta Claude API ({len(result)} chars)")
+            return result, "claude-sonnet-4-20250514"
+        except Exception as e:
+            logging.warning(f"⚠️ Claude API no disponible: {e} — intentando Ollama local")
+
+    # 2. Fallback: Ollama local (sin internet)
     try:
         response = requests.post(
             f'{OLLAMA_URL}/api/generate',
@@ -230,21 +244,7 @@ def _query_ai(prompt, max_tokens=MAX_AI_TOKENS):
                 logging.info(f"🤖 Respuesta Ollama local ({len(result)} chars)")
                 return result, OLLAMA_MODEL
     except Exception as e:
-        logging.warning(f"⚠️ Ollama local no disponible: {e}")
-
-    # 2. Fallback: Claude API (si hay internet)
-    if anthropic_client:
-        try:
-            message = anthropic_client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=max_tokens,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            result = message.content[0].text.strip()
-            logging.info(f"🌐 Respuesta Claude API ({len(result)} chars)")
-            return result, "claude-sonnet-4-20250514"
-        except Exception as e:
-            logging.warning(f"⚠️ Claude API no disponible: {e}")
+        logging.warning(f"⚠️ Ollama local tampoco disponible: {e}")
 
     return "No pude responder en este momento. Intenta de nuevo.", "none"
 
