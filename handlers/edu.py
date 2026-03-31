@@ -266,18 +266,25 @@ def _query_ai_json(prompt, max_tokens=MAX_AI_TOKENS):
 # ==================== PERFIL DE ALUMNO ====================
 
 def _get_or_create_student(node_id, student_id=None):
-    """Obtener perfil del alumno, crear uno básico si no existe"""
+    """Obtener perfil del alumno, crear uno básico si no existe.
+    Busca primero por node_id (siempre disponible), luego por student_id."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
-    # Buscar por student_id o node_id
-    if student_id:
-        c.execute("SELECT * FROM students WHERE id = ?", (student_id,))
-    else:
-        c.execute("SELECT * FROM students WHERE node_id = ?", (node_id,))
-
+    # Siempre buscar primero por node_id (es lo más confiable)
+    c.execute("SELECT * FROM students WHERE node_id = ?", (node_id,))
     row = c.fetchone()
+
+    # Si no encontró por node_id, buscar por student_id
+    if not row and student_id:
+        c.execute("SELECT * FROM students WHERE id = ?", (student_id,))
+        row = c.fetchone()
+
+    # También buscar en roster por si tiene nombre real
+    c.execute("SELECT name, grade FROM roster WHERE node_id = ?", (node_id,))
+    roster_row = c.fetchone()
+
     if row:
         profile = dict(row)
         profile['teacher_notes'] = json.loads(profile.get('teacher_notes', '[]'))
@@ -285,16 +292,19 @@ def _get_or_create_student(node_id, student_id=None):
         conn.close()
         return profile
 
-    # Auto-crear perfil básico
+    # Auto-crear perfil básico usando datos del roster si existe
     new_id = student_id or str(uuid.uuid4())[:8]
+    name = roster_row['name'] if roster_row else f"Alumno-{hex(node_id)[-4:]}"
+    grade = roster_row['grade'] if roster_row and roster_row['grade'] else '2'
+
     c.execute(
-        "INSERT INTO students (id, name, grade, node_id) VALUES (?, ?, ?, ?)",
-        (new_id, f"Alumno-{hex(node_id)[-4:]}", "2", node_id)
+        "INSERT OR IGNORE INTO students (id, name, grade, node_id) VALUES (?, ?, ?, ?)",
+        (new_id, name, grade, node_id)
     )
     conn.commit()
     profile = {
-        'id': new_id, 'name': f"Alumno-{hex(node_id)[-4:]}",
-        'grade': '2', 'node_id': node_id,
+        'id': new_id, 'name': name,
+        'grade': grade, 'node_id': node_id,
         'teacher_notes': [], 'level_by_subject': {},
         'teacher_message_to_parent': ''
     }
