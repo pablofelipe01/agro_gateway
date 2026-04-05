@@ -1,0 +1,7 @@
+meshtastic>=2.7.0
+anthropic>=0.86.0
+paho-mqtt>=2.1.0
+gspread>=6.2.0
+google-auth>=2.49.0
+Pypubsub>=4.0.7
+requests>=2.31.0

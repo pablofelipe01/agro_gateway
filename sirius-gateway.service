@@ -1,0 +1,16 @@
+[Unit]
+Description=Sirius Edu Mesh Gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pablo
+WorkingDirectory=/home/pablo/agro_gateway
+EnvironmentFile=/home/pablo/agro_gateway/.env
+ExecStart=/home/pablo/agro_gateway/venv/bin/python3 mesh_gateway.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
