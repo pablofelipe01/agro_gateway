@@ -138,6 +138,15 @@ def get_student_submissions(student_id):
     }) or []
 
 
+def get_all_submissions(school_id):
+    """Obtener todas las entregas de una escuela (para profesor)"""
+    return _get('submissions', {
+        'select': '*, roster!submissions_student_id_fkey(name, grade), assignments(title, description)',
+        'order': 'submitted_at.desc',
+        'limit': '20',
+    }) or []
+
+
 def save_submission(assignment_id, student_id, response):
     """Guardar entrega de un alumno"""
     return _post('submissions', {
@@ -229,6 +238,80 @@ def log_connection(student_id, school_id, node_id):
 # ============================================================
 # PROGRESO
 # ============================================================
+
+# ============================================================
+# CAPITULOS Y ACTIVIDADES (v4)
+# ============================================================
+
+def get_lesson_chapters(lesson_id):
+    """Obtener capitulos de una leccion, ordenados"""
+    return _get('lesson_chapters', {
+        'lesson_id': f'eq.{lesson_id}',
+        'select': '*',
+        'order': 'chapter_number',
+    }) or []
+
+
+def get_chapter_activities(lesson_id, chapter_number):
+    """Obtener actividades de un capitulo"""
+    chapters = _get('lesson_chapters', {
+        'lesson_id': f'eq.{lesson_id}',
+        'chapter_number': f'eq.{chapter_number}',
+        'select': 'id',
+    })
+    if not chapters:
+        return []
+    chapter_id = chapters[0]['id']
+    return _get('chapter_activities', {
+        'chapter_id': f'eq.{chapter_id}',
+        'select': '*',
+        'order': 'activity_number',
+    }) or []
+
+
+def save_activity_submission(activity_id, student_id, response, activity_type):
+    """Guardar respuesta de un alumno a una actividad"""
+    return _post('submissions', {
+        'activity_id': activity_id,
+        'student_id': student_id,
+        'response': response,
+        'activity_type': activity_type,
+    })
+
+
+def upsert_student_progress(student_id, lesson_id, chapter, activity):
+    """Actualizar o crear progreso del alumno"""
+    existing = _get('student_progress', {
+        'student_id': f'eq.{student_id}',
+        'lesson_id': f'eq.{lesson_id}',
+        'select': 'id',
+    })
+    if existing:
+        return _patch('student_progress', {
+            'student_id': f'eq.{student_id}',
+            'lesson_id': f'eq.{lesson_id}',
+        }, {
+            'last_completed_chapter': chapter,
+            'last_completed_activity': activity,
+        })
+    else:
+        return _post('student_progress', {
+            'student_id': student_id,
+            'lesson_id': lesson_id,
+            'last_completed_chapter': chapter,
+            'last_completed_activity': activity,
+        })
+
+
+def get_lesson_progress(student_id, lesson_id):
+    """Obtener progreso de un alumno en una leccion"""
+    result = _get('student_progress', {
+        'student_id': f'eq.{student_id}',
+        'lesson_id': f'eq.{lesson_id}',
+        'select': '*',
+    })
+    return result[0] if result else None
+
 
 def get_student_progress(student_id):
     """Obtener resumen de progreso usando la función de Supabase"""
