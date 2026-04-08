@@ -207,7 +207,7 @@ def get_unanswered_questions(school_id):
     return _get('student_questions', {
         'school_id': f'eq.{school_id}',
         'teacher_response': 'is.null',
-        'select': '*, roster(name, grade)',
+        'select': '*, roster!student_questions_student_id_fkey(name, grade)',
         'order': 'created_at.desc',
     }) or []
 
