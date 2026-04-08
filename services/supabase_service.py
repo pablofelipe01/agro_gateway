@@ -108,6 +108,17 @@ def get_active_lessons(grade, school_id):
     }) or []
 
 
+def get_all_active_lessons(school_id):
+    """Obtener TODAS las lecciones activas (sin filtrar por grado, para profesores)"""
+    return _get('lessons', {
+        'school_id': f'eq.{school_id}',
+        'is_active': 'eq.true',
+        'select': '*',
+        'order': 'created_at.desc',
+        'limit': '10',
+    }) or []
+
+
 def get_lesson(lesson_id):
     """Obtener una lección por ID"""
     result = _get('lessons', {'id': f'eq.{lesson_id}', 'select': '*'})

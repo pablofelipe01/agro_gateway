@@ -266,11 +266,15 @@ def _handle_sync_request(text, from_id, from_num, send_fn, publish_mqtt):
         return
 
     if tipo == 'lessons':
-        lessons = db.get_active_lessons(user.get('grade', '2'), SCHOOL_ID)
+        # Profesores ven todas las lecciones (sin filtro de grado)
+        if user.get('role') == 'teacher':
+            lessons = db.get_all_active_lessons(SCHOOL_ID)
+        else:
+            lessons = db.get_active_lessons(user.get('grade') or '2', SCHOOL_ID)
         if not lessons:
             send_fn(from_num, "SYNC_RES|lessons|EMPTY|No hay lecciones activas")
             return
-        for l in lessons[:3]:
+        for l in lessons[:5]:
             summary = (l.get('summary', '') or '')[:150]
             total_ch = l.get('total_chapters', 0)
             if total_ch == 0:
